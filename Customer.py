@@ -2,6 +2,8 @@
 from math import floor
 import time
 import threading
+import queue
+import uuid
 #
 #     设定
 #     单用户每次拉到10人助力，其中5人为新消用户，3人转化
@@ -14,6 +16,7 @@ class Customer(threading.Thread):
 
     def __init__(self,queue,father=None):     #拉新的初始用户
         threading.Thread.__init__(self)
+        self.id = uuid.uuid4() 
         self.isNew = True
         self.bonus = 0
         self.father = father
@@ -38,25 +41,37 @@ class Customer(threading.Thread):
         #分享浏览奖励金
         self.bonus = old_user * old_bonus + new_bonus * new_scan
 
-        self.bringNewCustomer(0.6,5)
 
 
-    def bringNewCustomer(self,transfer_rate,new_scan,squeu):             #拉新转化
+    def bringNewCustomer(self,transfer_rate,new_scan):             #拉新转化
 
         for i in range(floor(new_scan*transfer_rate)):
-            self.queue.put(Customer(self))
+            self.queue.put(Customer(self.queue,self))
 
 
     def run(self):
         while(True):
-            self.consume()
-            time.sleep(1)
+            self.consume(10,5,0.5,5,3,5)
+            self.bringNewCustomer(0.6,5)
+            print("id:%s  order:%d bonus:%d"%(self.id,self.order_sum,self.bonus))
+            time.sleep(10)
 
 
 
 if __name__ == "__main__":
-    old_set= []
-    for i in range(0, 10):
-        old_set.append(Customer().start())
-
-
+    L = []
+    q = queue.Queue()
+    for i in range(10):
+        item=(Customer(q))
+        q.put(item)
+        print("new Customer")
+    try:   
+        while not q.empty():
+            item = q.get()
+            L.append(item)
+            item.start()
+            # time.sleep(1)
+    except KeyboardInterrupt:
+        print("customer num:%d" % len(L))
+        print("customer order_sum:%d" % sum(i.order_sum for i in L))
+        print("customer bonus_sum:%d" % sum(i.bonus for i in L))
