@@ -3,6 +3,7 @@ from math import floor
 import time
 import threading
 import queue
+import random
 import uuid
 #
 #     设定
@@ -32,6 +33,7 @@ class Customer(threading.Thread):
 
     def consume(self,orde_price,old_user,old_bonus,new_scan,new_bonus,new_t_bonus):
         self.order_sum += orde_price - min(orde_price/2.0,self.bonus/2.0)   #单次消费的可用奖励金最高不超过订单价格一半及或提现的奖励金全额的一半
+        self.bonus -= min(orde_price/2.0,self.bonus/2.0)
 
         if self.isNew == True:                                               #新用户转化，拉新奖励给回到发展人
             if self.father is not None:
@@ -53,25 +55,25 @@ class Customer(threading.Thread):
         while(True):
             self.consume(10,5,0.5,5,3,5)
             self.bringNewCustomer(0.6,5)
-            print("id:%s  order:%d bonus:%d"%(self.id,self.order_sum,self.bonus))
-            time.sleep(10)
+            # print("id:%s  order:%d bonus:%d"%(self.id,self.order_sum,self.bonus))
+            time.sleep(1)
 
 
 
 if __name__ == "__main__":
     L = []
     q = queue.Queue()
-    for i in range(10):
+    for i in range(10):                     ##初始化10个种子用户
         item=(Customer(q))
         q.put(item)
-        print("new Customer")
-    try:   
+
+    try:
         while not q.empty():
             item = q.get()
             L.append(item)
             item.start()
+            print("\rcustomer num:%d,order_sum:%d, bonus_sum:%d"% (len(L),sum(i.order_sum for i in L),sum(i.bonus for i in L)),end='')
+            time.sleep(0.1)
             # time.sleep(1)
-    except KeyboardInterrupt:
-        print("customer num:%d" % len(L))
-        print("customer order_sum:%d" % sum(i.order_sum for i in L))
-        print("customer bonus_sum:%d" % sum(i.bonus for i in L))
+    finally:
+        print("\nEND")
